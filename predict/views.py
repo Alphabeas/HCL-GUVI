@@ -11,7 +11,7 @@ from .audio.base64_decoder import save_base64_audio
 
 
 # =========================================================
-# 🔮 AI vs HUMAN PREDICTION API (BASE64 – FINAL)
+# 🔮 AI vs HUMAN PREDICTION API (GUVI TESTER COMPATIBLE)
 # =========================================================
 class PredictAPIView(APIView):
 
@@ -23,8 +23,22 @@ class PredictAPIView(APIView):
             log_request("/api/predict/", "unauthorized")
             return error_response
 
-        audio_base64 = request.data.get("audio_base64")
-        audio_format = request.data.get("audio_format", "mp3")
+        # =================================================
+        # ✅ GUVI FIELD COMPATIBILITY (IMPORTANT FIX)
+        # =================================================
+        audio_base64 = (
+            request.data.get("audio_base64")
+            or request.data.get("audio_base64_format")
+            or request.data.get("audioBase64")
+            or request.data.get("audio")
+        )
+
+        audio_format = (
+            request.data.get("audio_format")
+            or request.data.get("audioFormat")
+            or "mp3"
+        )
+
         language = request.data.get("language", "English")
 
         if not audio_base64:
@@ -51,7 +65,7 @@ class PredictAPIView(APIView):
 
             return Response(
                 {
-                    "prediction": prediction,
+                    "prediction": prediction,     # AI or HUMAN
                     "confidence": confidence,
                     "language": language,
                     "status": "success"
@@ -71,6 +85,7 @@ class PredictAPIView(APIView):
 # ❤️ HEALTH CHECK API
 # =========================================================
 class HealthAPIView(APIView):
+
     def get(self, request):
         log_request("/api/health/", "success")
         return Response(
@@ -83,9 +98,10 @@ class HealthAPIView(APIView):
 
 
 # =========================================================
-# 🌐 LANGUAGE HANDLING API (TESTER-COMPATIBLE)
+# 🌐 LANGUAGE DETECTION API (HINDI ADDED)
 # =========================================================
 class LanguageDetectAPIView(APIView):
+
     def post(self, request):
 
         valid, error = validate_api_key(request)
@@ -93,8 +109,19 @@ class LanguageDetectAPIView(APIView):
             return error
 
         language_hint = request.data.get("language", "English")
-        audio_format = request.data.get("audio_format", "mp3")
-        audio_base64 = request.data.get("audio_base64")
+
+        audio_format = (
+            request.data.get("audio_format")
+            or request.data.get("audioFormat")
+            or "mp3"
+        )
+
+        audio_base64 = (
+            request.data.get("audio_base64")
+            or request.data.get("audio_base64_format")
+            or request.data.get("audioBase64")
+            or request.data.get("audio")
+        )
 
         if not audio_base64:
             return Response(
@@ -105,8 +132,14 @@ class LanguageDetectAPIView(APIView):
         try:
             audio_path = save_base64_audio(audio_base64, audio_format)
 
+            # ✅ Hindi added here
             supported_languages = [
-                "English", "Tamil", "Telugu", "Malayalam", "Kannada"
+                "English",
+                "Hindi",
+                "Tamil",
+                "Telugu",
+                "Malayalam",
+                "Kannada"
             ]
 
             detected_language = (
@@ -140,6 +173,7 @@ class LanguageDetectAPIView(APIView):
 # 📊 LOG VIEW API
 # =========================================================
 class LogsAPIView(APIView):
+
     def get(self, request):
         return Response(
             {
